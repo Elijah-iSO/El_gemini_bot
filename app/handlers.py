@@ -1,29 +1,32 @@
 from aiogram import Router, F
+from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+
+from config import AI_TOKEN
+from app.states import AI
+from app.database.requests import set_user
 
 import google.generativeai as genai
 
-from config import G_TOKEN
-from app.states import AI
-
-
 router = Router()
-genai.configure(api_key=G_TOKEN)
-model = genai.GenerativeModel('gemini-1.5-pro-latest')
+genai.configure(api_key=AI_TOKEN)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 
-@router.message(CommandStart)
-async def cmd_start(message: Message):
-    await message.answer('Добро пожаловать в бот Gemini AI by Google.')
+@router.message(CommandStart())
+async def cmd_start(message: Message, state: FSMContext):
+    await set_user(message.from_user.id)
+    await message.answer('Добро пожаловать в бот с ИИ.')
+    await state.clear()
 
 
 @router.message(AI.answer)
 async def answer(message: Message):
-    await message.answer('Подождите, идет генерация запроса.')
+    await message.answer('Подождите, идёт генерация запроса.')
 
 
+@router.message(AI.question)
 @router.message(F.text)
 async def ai(message: Message, state: FSMContext):
     await state.set_state(AI.answer)
@@ -38,4 +41,4 @@ async def ai(message: Message, state: FSMContext):
         response = await chat.send_message_async(message.text)
         await state.update_data(context=chat)
     await message.answer(response.text)
-    await state.clear()
+    await state.set_state(AI.question)
