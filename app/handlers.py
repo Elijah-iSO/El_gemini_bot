@@ -2,12 +2,11 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
+import google.generativeai as genai
 
 from config import AI_TOKEN
 from app.states import AI
 from app.database.requests import set_user
-
-import google.generativeai as genai
 
 router = Router()
 genai.configure(api_key=AI_TOKEN)
